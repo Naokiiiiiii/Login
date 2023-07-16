@@ -62,23 +62,4 @@ class SigninController extends Controller
             throw $e;
         }
     }
-
-    public function signin(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email'],
-            'password' => ['required']
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->messages(), Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'email_verify' => false,
-        ]);
-
-        return response()->json('User registration completed', Response::HTTP_OK);
-    }
 }

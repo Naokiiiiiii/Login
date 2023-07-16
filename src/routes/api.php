@@ -17,7 +17,6 @@ use App\Models\User;
 |
 */
 
-Route::post('/signin', [SigninController::class, 'signin']); // ユーザー登録
 Route::post('/login', [LoginController::class, 'login']); // ログイン
 
 Route::post('/pre_register', [SigninController::class, 'storeValidMail']); // 仮登録
