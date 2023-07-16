@@ -44,6 +44,25 @@ class SigninController extends Controller
       return response()->json(['result' => true], 200);
     }
 
+    public function verifyToken(Request $request) {
+        $token = $request->token;
+        $emailVerification = EmailVerification::findByToken($token);
+
+        if (empty($emailVerification) || $emailVerification->isRegister()) {
+            return response()->json(['status' => false], 401);
+        }
+
+        try {
+            $emailVerification->mailVerify();
+            $emailVerification->update();
+
+            return response()->json(['status' => true], 200);
+        } catch(\Throwable $e) {
+            \Log::error($e);
+            throw $e;
+        }
+    }
+
     public function signin(Request $request) {
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email'],

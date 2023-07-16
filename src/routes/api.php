@@ -19,8 +19,9 @@ use App\Models\User;
 
 Route::post('/signin', [SigninController::class, 'signin']); // ユーザー登録
 Route::post('/login', [LoginController::class, 'login']); // ログイン
-// 仮登録用
-Route::post('/pre_register', [SigninController::class, 'storeValidMail']);
+
+Route::post('/pre_register', [SigninController::class, 'storeValidMail']); // 仮登録
+Route::post('/verify_token', [SigninController::class, 'verifyToken']); //仮登録メールアドレス認証
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
