@@ -53,4 +53,8 @@ class EmailVerification extends Model
     public function register() {
         $this->status = self::REGISTER;
     }
+
+    public function isValidToken() {
+        return Carbon::parse($this->expiration_datetime)->gt(Carbon::now());
+    }
 }
