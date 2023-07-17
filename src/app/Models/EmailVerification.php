@@ -31,4 +31,20 @@ class EmailVerification extends Model
         ]);
         return $emailVerification;
     }
+
+    public static function findByToken($token) {
+        return self::where('token', '=', $token)->first();
+    }
+
+    public function mailVerify() {
+        $this->status = self::MAIL_VERIFY;
+    }
+
+    public function isRegister() {
+        return $this->status === self::REGISTER;
+    }
+
+    public function register() {
+        $this->status = self::REGISTER;
+    }
 }
