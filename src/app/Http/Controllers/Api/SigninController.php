@@ -56,7 +56,7 @@ class SigninController extends Controller
             $emailVerification->mailVerify();
             $emailVerification->update();
 
-            return response()->json(['status' => true, 'email' => $emailVerification], 200);
+            return response()->json(['status' => true, 'email' => $emailVerification->email], 200);
         } catch(\Throwable $e) {
             \Log::error($e);
             throw $e;
