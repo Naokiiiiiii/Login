@@ -19,7 +19,7 @@ class SigninController extends Controller
     const MAIL_VERIFY = 1; //メールアドレス認証
     const REGISTER = 2;    // 本会員登録完了
 
-    public function storeValidMail(
+    public function storeValidEMail(
       Request $request,
       EmailVerification $emailVerification
     )
@@ -44,22 +44,22 @@ class SigninController extends Controller
       return response()->json(['result' => true], 200);
     }
 
-    public function signin(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email'],
-            'password' => ['required']
-        ]);
+    public function verifyToken(Request $request) {
+        $token = $request->token;
+        $emailVerification = EmailVerification::findByToken($token);
 
-        if ($validator->fails()) {
-            return response()->json($validator->messages(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        if (empty($emailVerification) || $emailVerification->isRegister()) {
+            return response()->json(['status' => false], 401);
         }
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'email_verify' => false,
-        ]);
+        try {
+            $emailVerification->mailVerify();
+            $emailVerification->update();
 
-        return response()->json('User registration completed', Response::HTTP_OK);
+            return response()->json(['status' => true, 'email' => $emailVerification], 200);
+        } catch(\Throwable $e) {
+            \Log::error($e);
+            throw $e;
+        }
     }
 }
