@@ -19,7 +19,7 @@ class SigninController extends Controller
     const MAIL_VERIFY = 1; //メールアドレス認証
     const REGISTER = 2;    // 本会員登録完了
 
-    public function storeValidMail(
+    public function storeValidEMail(
       Request $request,
       EmailVerification $emailVerification
     )
@@ -41,25 +41,52 @@ class SigninController extends Controller
       }
 
       Mail::to($email)->send(new PreRegister($token));
-      return response()->json(['result' => true], 200);
+      return response()->json(['result' => true, 'content' => $emailVerification], 200);
     }
 
-    public function signin(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email'],
-            'password' => ['required']
-        ]);
+    public function verifyToken(Request $request) {
+        $token = $request->token;
+        $emailVerification = EmailVerification::findByToken($token);
 
-        if ($validator->fails()) {
-            return response()->json($validator->messages(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        // 判定見直す
+        $isValid = Carbon::parse($emailVerification->expiration_datetime)->lt(Carbon::now()->format('Y-m-d H:i:s'));
+
+        if (empty($emailVerification) || $emailVerification->isRegister()) {
+            return response()->json(['status' => false], 401);
         }
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'email_verify' => false,
-        ]);
+        if (!$isValid) {
+            return response()->json(['status' => false], 401);
+        }
 
-        return response()->json('User registration completed', Response::HTTP_OK);
+        try {
+            $emailVerification->mailVerify();
+            $emailVerification->update();
+
+            return response()->json(['status' => true, 'email' => $emailVerification->email], 200);
+        } catch(\Throwable $e) {
+            \Log::error($e);
+            throw $e;
+        }
+    }
+
+    public function registerUser(Request $request) {
+        $email = $request->email;
+        $password = $request->password;
+        $emailVerification = EmailVerification::findByEmail($email);
+
+        try {
+            $user = User::create([
+                'email' => $email,
+                'password' => Hash::make($password)
+            ]);
+            $emailVerification->register();
+            $emailVerification->update();
+
+            return response()->json(['status' => true, 'user' => $user], 401);
+        } catch(\Throwable $e) {
+            \Log::error($e);
+            throw $e;
+        }
     }
 }
