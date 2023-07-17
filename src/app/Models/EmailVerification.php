@@ -15,6 +15,8 @@ class EmailVerification extends Model
     const MAIL_VERIFY = 1; //メールアドレス認証
     const REGISTER = 2;    // 本会員登録完了
 
+    const EXPIRATION_HOUR = 1;
+
     protected $fillable = [
         'email',
         'token',
@@ -22,18 +24,22 @@ class EmailVerification extends Model
         'expiration_datetime',
     ];
 
-    public static function build($email, $token, $hours = 1) {
+    public static function build($email, $token) {
         $emailVerification = new self([
             'email' => $email,
             'token' => $token,
             'status' => self::SEND_MAIL,
-            'expiration_datetime' => Carbon::now()->addHours($hours),
+            'expiration_datetime' => Carbon::now()->addHours($EXPIRATION_HOUR),
         ]);
         return $emailVerification;
     }
 
     public static function findByToken($token) {
         return self::where('token', '=', $token)->first();
+    }
+
+    public static function findByEmail($email) {
+        return self::where('email', '=', $email)->first();
     }
 
     public function mailVerify() {

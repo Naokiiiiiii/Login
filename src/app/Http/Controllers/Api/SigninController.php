@@ -41,14 +41,21 @@ class SigninController extends Controller
       }
 
       Mail::to($email)->send(new PreRegister($token));
-      return response()->json(['result' => true], 200);
+      return response()->json(['result' => true, 'content' => $emailVerification], 200);
     }
 
     public function verifyToken(Request $request) {
         $token = $request->token;
         $emailVerification = EmailVerification::findByToken($token);
 
+        // 判定見直す
+        $isValid = Carbon::parse($emailVerification->expiration_datetime)->lt(Carbon::now()->format('Y-m-d H:i:s'));
+
         if (empty($emailVerification) || $emailVerification->isRegister()) {
+            return response()->json(['status' => false], 401);
+        }
+
+        if (!$isValid) {
             return response()->json(['status' => false], 401);
         }
 
@@ -57,6 +64,26 @@ class SigninController extends Controller
             $emailVerification->update();
 
             return response()->json(['status' => true, 'email' => $emailVerification->email], 200);
+        } catch(\Throwable $e) {
+            \Log::error($e);
+            throw $e;
+        }
+    }
+
+    public function registerUser(Request $request) {
+        $email = $request->email;
+        $password = $request->password;
+        $emailVerification = EmailVerification::findByEmail($email);
+
+        try {
+            $user = User::create([
+                'email' => $email,
+                'password' => Hash::make($password)
+            ]);
+            $emailVerification->register();
+            $emailVerification->update();
+
+            return response()->json(['status' => true, 'user' => $user], 401);
         } catch(\Throwable $e) {
             \Log::error($e);
             throw $e;
